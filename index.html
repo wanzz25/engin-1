@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Engine Maker 1.0</title>
+<style>
+:root{--bg:#eceff3;--fg:#15181d;--pn:#fffffff2;--ln:#c9ced6;--ac:#e8590c;--mu:#5b6370;--ch:#f3f5f8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101216;--fg:#e8eaee;--pn:#1a1d23f2;--ln:#2d323b;--mu:#8b93a1;--ch:#23272f}}
+:root[data-theme="dark"]{--bg:#101216;--fg:#e8eaee;--pn:#1a1d23f2;--ln:#2d323b;--mu:#8b93a1;--ch:#23272f}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;overflow:hidden}
+#app{display:flex;height:100%}
+#stage{flex:1;position:relative;min-width:0;min-height:0;overflow:hidden}
+canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+#title{position:absolute;top:12px;left:14px;font-weight:800;letter-spacing:.08em;font-size:14px}
+#title small{color:var(--ac);margin-left:6px}
+#tg{position:absolute;top:10px;right:12px;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:9px 13px;font-weight:700;font-size:13px}
+#sd,#ign{position:absolute;top:40px;left:14px;background:var(--pn);color:var(--fg);border:1px solid var(--ln);border-radius:10px;padding:7px 11px;font-size:12px;font-weight:700}
+#ign{top:74px}
+#ctl{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#dead{display:none;position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);flex-direction:column;align-items:center;gap:8px;background:var(--pn);border:2px solid #e03131;border-radius:14px;padding:14px 18px;text-align:center;font-size:13px;z-index:5}
+#dead b{font-size:18px;color:#e03131}#dead button{background:#e03131;color:#fff;border:0;border-radius:9px;padding:9px 14px;font-weight:700}
+#hud{flex:1 1 100%;order:-1;min-width:0;background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:10px 12px;font-size:13px}
+#gearbox{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:8px}
+#gtrack{position:relative;width:118px;height:136px;touch-action:none}
+.gb{position:absolute;border-radius:3px;background:var(--ln)}
+#knob{position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;background:var(--ac);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;transition:left .12s,top .12s;box-shadow:0 3px 8px #0005;pointer-events:none}
+.tk{position:absolute;width:18px;text-align:center;font-size:12px;color:var(--mu)}
+#pedal{width:88px;height:140px;border-radius:16px;border:1px solid var(--ln);background:repeating-linear-gradient(0deg,var(--ch) 0 10px,var(--ln) 10px 13px);color:var(--fg);font-weight:800;touch-action:none;user-select:none;-webkit-user-select:none;transform:perspective(260px) rotateX(calc(var(--t,0)*26deg));transform-origin:bottom}
+#pedal.on{border-color:var(--ac);color:var(--ac)}
+#bar{height:6px;background:var(--ln);border-radius:3px;margin:6px 0 4px;overflow:hidden}#bar i{display:block;height:100%;background:var(--ac)}
+#hud b{font-size:15px}
+.st{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.st span{color:var(--mu)}
+#rpm{width:100%;accent-color:var(--ac)}
+#panel{width:290px;background:var(--pn);border-left:1px solid var(--ln);padding:14px;overflow-y:auto;display:none}
+#panel.open{display:block}
+h3{margin:14px 0 6px;font-size:12px;color:var(--mu);letter-spacing:.06em}
+h3:first-of-type{margin-top:0}
+.hd{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.hd button{background:none;border:0;color:var(--fg);font-size:20px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.g button,.chip{background:var(--ch);color:var(--fg);border:1px solid var(--ln);border-radius:9px;padding:9px 6px;font-size:13px}
+.g button.on,.chip.on{border-color:var(--ac);background:var(--ac);color:#fff;font-weight:700}
+.chips{display:flex;flex-direction:column;gap:6px}
+.chip{text-align:left;padding:10px}
+label{display:flex;justify-content:space-between;font-size:13px;margin-top:6px}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.sw{display:flex;gap:8px}
+.sw i{width:30px;height:30px;border-radius:50%;border:2px solid var(--ln);cursor:pointer}
+.sw i.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+@media(max-width:700px){#app{flex-direction:column}#panel{width:auto;max-height:46%;flex:none;border-left:0;border-top:1px solid var(--ln)}}
+#clutch{margin-left:auto}
+#brake,#clutch{width:64px;height:100px;border-radius:14px;border:1px solid var(--ln);background:repeating-linear-gradient(0deg,var(--ch) 0 10px,var(--ln) 10px 13px);color:var(--fg);font-weight:800;font-size:10px;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
+#brake.on{border-color:#e03131;color:#e03131;transform:scale(.95)}
+#clutch.on{border-color:#2f6fd0;color:#2f6fd0;transform:scale(.95)}
+@media(max-width:700px){#brake,#clutch{width:50px}#pedal{width:66px}#gearbox{padding:6px}#hud{padding:8px;font-size:12px}}
+#lang{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:#000a}
+#lang.open{display:flex}
+.lbox{background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:18px;width:min(320px,86vw);text-align:center}
+.lbox b{display:block;margin-bottom:12px;font-size:14px}
+#lopts{display:grid;gap:8px}
+#lopts button{padding:12px;border-radius:10px;border:1px solid var(--ln);background:var(--ch);color:var(--fg);font-size:15px;font-weight:700}
+#lopts button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+</style></head><body>
+<div id="app">
+<div id="stage"><canvas id="c"></canvas>
+<div id="title">ENGINE MAKER<small>1.0</small></div>
+<button id="tg">⚙ Engine Maker</button>
+<button id="sd">🔇 Turn sound on</button>
+<button id="ign">🔑 Start engine</button>
+<div id="dead"><b data-i="dead_t"></b><span data-i="dead_d"></span><button id="fix" data-i="fix"></button></div>
+<div id="ctl"><div id="gearbox"><div id="gtrack"><div id="knob">N</div></div></div>
+<div id="hud"><div class="st"><b id="nm"></b><span id="cc"></span></div>
+<div class="st"><span id="hp"></span><span id="tq"></span></div>
+<div class="st" style="margin:0"><b id="sp" style="font-size:22px">0</b><span>km/h</span><b id="gr" style="margin-left:auto;font-size:18px">N</b></div>
+<div id="bar"><i id="bi"></i></div><span id="rv" style="color:var(--mu);font-size:12px"></span></div>
+<button id="clutch" data-i="clutch"></button>
+<button id="brake" data-i="brake"></button>
+<button id="pedal" data-i="gas"></button></div></div>
+<div id="lang"><div class="lbox"><b>Language · 언어 · 言語 · Язык · اللغة</b><div id="lopts"></div></div></div>
+<aside id="panel">
+<div class="hd"><span data-i="title"></span><button id="cl">×</button></div>
+<h3 data-i="h_layout"></h3><div class="g" id="types"></div>
+<div class="chips" style="margin-top:6px"><button class="chip" id="twinb"></button></div>
+<h3 data-i="h_dim"></h3>
+<label><span data-i="bore"></span><span id="bv"></span></label><input type="range" id="bore" min="50" max="100" value="70">
+<label><span data-i="stroke"></span><span id="sv"></span></label><input type="range" id="stroke" min="50" max="100" value="70">
+<h3 data-i="h_fuel"></h3><div class="g" id="fuel"></div>
+<h3 data-i="h_induct"></h3><div class="chips" id="opts"></div>
+<h3 data-i="h_exh"></h3><div class="g" id="exh"></div><div class="chips" id="popc" style="margin-top:6px"></div>
+<h3 data-i="h_ecu"></h3><div class="chips"><button class="chip" id="ecub"></button></div>
+<div id="ecuP" style="display:none"><label><span data-i="map"></span><span id="mv"></span></label><input type="range" id="emap" min="0" max="30" value="10">
+<label><span data-i="lim"></span><span id="lv"></span></label><input type="range" id="elim" min="-10" max="20" value="0">
+<div id="bw"><label><span data-i="bst"></span><span id="bv2"></span></label><input type="range" id="ebst" min="0" max="50" value="10"></div></div>
+<h3 data-i="h_lang"></h3><div class="g" id="langs"></div>
+<h3 data-i="h_bg"></h3><div class="sw" id="bgs"></div>
+<h3 data-i="h_snd"></h3><label><span data-i="vol"></span><span id="vv">70%</span></label><input type="range" id="vol" min="0" max="100" value="70">
+<h3 data-i="h_col"></h3><div class="sw" id="sw"></div>
+</aside></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const S={twin:false,ecu:false,map:10,lim:0,bst:10,exh:'stock',pop:false,fuel:'gas',type:'v2',bore:70,stroke:70,carb:false,turbo:false,sc:false,color:'#7b8494',rpm:900};
+const LANGS={en:'English',ko:'한국어',ja:'日本語',ru:'Русский',ar:'العربية'};
+let LG='en';
+const TX={
+en:{title:'Engine Maker',tg_open:'⚙ Engine Maker',tg_close:'✕ Close maker',snd_on:'🔇 Turn sound on',snd_off:'🔊 Turn sound off',ign_start:'🔑 Start engine',ign_crank:'🔑 Cranking…',ign_stop:'🔑 Stop engine',dead_t:'💥 Engine blown!',dead_d:'You downshifted too far and over-revved the engine.',fix:'🔧 Repair',clutch:'CLUTCH<br>⬇',brake:'BRAKE<br>⬇',gas:'GAS<br>⬇',twin:'Twin engine (2 running at once)',h_layout:'Cylinders / Layout',h_dim:'Dimensions',bore:'Bore',stroke:'Stroke',h_fuel:'Fuel',fuel_gas:'Gasoline',fuel_dsl:'Diesel',h_induct:'Intake / Boost',carb:'Carburetor',turbo:'Turbocharger',sc:'Supercharger',h_exh:'Exhaust',x_stock:'Stock muffler',x_sport:'Sport',x_straight:'Straight pipe',x_open:'Open (racing)',pop:'Popcorn / crackle (pops on lift-off)',h_ecu:'ECU tuning',ecu:'ECU tuning',map:'Fuel / ignition map',lim:'Rev limiter',bst:'Boost pressure',h_bg:'Background color',h_snd:'Sound',vol:'Volume',h_col:'Engine color',h_lang:'Language',single:'Single',flat:'Flat',inl:'Inline',rpm_red:'rpm / redline',overrev:'⚠ Over-rev!',blown:'💥 Blown',stall:'🛑 Engine off — press 🔑 Start',msg_clutch:'⚠ Press the clutch to start',grind_msg:'⚠ Gear grind! Press the clutch'},
+ko:{title:'엔진 메이커',tg_open:'⚙ 엔진 메이커',tg_close:'✕ 메이커 닫기',snd_on:'🔇 소리 켜기',snd_off:'🔊 소리 끄기',ign_start:'🔑 시동 걸기',ign_crank:'🔑 시동 거는 중…',ign_stop:'🔑 시동 끄기',dead_t:'💥 엔진 파손!',dead_d:'기어를 너무 낮게 내려 과회전했어요',fix:'🔧 수리하기',clutch:'클러치<br>⬇',brake:'브레이크<br>⬇',gas:'가스<br>⬇',twin:'트윈 엔진 (2개 동시 작동)',h_layout:'기통 / 배열',h_dim:'치수',bore:'보어',stroke:'스트로크',h_fuel:'연료',fuel_gas:'가솔린',fuel_dsl:'디젤',h_induct:'흡기 / 과급',carb:'카뷰레터',turbo:'터보차저',sc:'슈퍼차저',h_exh:'배기',x_stock:'순정 머플러',x_sport:'스포츠',x_straight:'직관',x_open:'오픈 (레이싱)',pop:'팝콘 / 크래클 (감속 시 빵빵)',h_ecu:'ECU 튜닝',ecu:'ECU 튜닝',map:'연료·점화 맵',lim:'레브 리미터',bst:'부스트 압력',h_bg:'배경 색상',h_snd:'사운드',vol:'볼륨',h_col:'엔진 색상',h_lang:'언어',single:'단기통',flat:'플랫',inl:'인라인',rpm_red:'rpm / 레드',overrev:'⚠ 과회전!',blown:'💥 파손',stall:'🛑 시동 꺼짐 — 🔑 시동 버튼',msg_clutch:'⚠ 클러치를 밟고 시동을 거세요',grind_msg:'⚠ 기어 갈림! 클러치를 밟으세요'},
+ja:{title:'エンジンメーカー',tg_open:'⚙ エンジンメーカー',tg_close:'✕ 閉じる',snd_on:'🔇 サウンドON',snd_off:'🔊 サウンドOFF',ign_start:'🔑 エンジン始動',ign_crank:'🔑 始動中…',ign_stop:'🔑 エンジン停止',dead_t:'💥 エンジン破損!',dead_d:'ギアを落としすぎてオーバーレブしました',fix:'🔧 修理',clutch:'クラッチ<br>⬇',brake:'ブレーキ<br>⬇',gas:'アクセル<br>⬇',twin:'ツインエンジン(2基同時稼働)',h_layout:'気筒数 / 配列',h_dim:'寸法',bore:'ボア',stroke:'ストローク',h_fuel:'燃料',fuel_gas:'ガソリン',fuel_dsl:'ディーゼル',h_induct:'吸気 / 過給',carb:'キャブレター',turbo:'ターボチャージャー',sc:'スーパーチャージャー',h_exh:'排気',x_stock:'純正マフラー',x_sport:'スポーツ',x_straight:'ストレート管',x_open:'オープン(レーシング)',pop:'ポップコーン / クラックル(減速時にバンバン)',h_ecu:'ECUチューニング',ecu:'ECUチューニング',map:'燃料・点火マップ',lim:'レブリミッター',bst:'ブースト圧',h_bg:'背景色',h_snd:'サウンド',vol:'音量',h_col:'エンジン色',h_lang:'言語',single:'単気筒',flat:'水平対向',inl:'直列',rpm_red:'rpm / レッドライン',overrev:'⚠ オーバーレブ!',blown:'💥 破損',stall:'🛑 エンジン停止 — 🔑 始動ボタン',msg_clutch:'⚠ クラッチを踏んで始動してください',grind_msg:'⚠ ギア鳴り!クラッチを踏んでください'},
+ru:{title:'Конструктор двигателей',tg_open:'⚙ Конструктор',tg_close:'✕ Закрыть',snd_on:'🔇 Включить звук',snd_off:'🔊 Выключить звук',ign_start:'🔑 Запустить двигатель',ign_crank:'🔑 Запуск…',ign_stop:'🔑 Заглушить',dead_t:'💥 Двигатель разрушен!',dead_d:'Слишком низкая передача — двигатель перекручен',fix:'🔧 Починить',clutch:'СЦЕПЛ.<br>⬇',brake:'ТОРМОЗ<br>⬇',gas:'ГАЗ<br>⬇',twin:'Двойной двигатель (2 одновременно)',h_layout:'Цилиндры / Компоновка',h_dim:'Размеры',bore:'Диаметр цилиндра',stroke:'Ход поршня',h_fuel:'Топливо',fuel_gas:'Бензин',fuel_dsl:'Дизель',h_induct:'Впуск / Наддув',carb:'Карбюратор',turbo:'Турбокомпрессор',sc:'Нагнетатель',h_exh:'Выхлоп',x_stock:'Штатный глушитель',x_sport:'Спорт',x_straight:'Прямоток',x_open:'Открытый (гоночный)',pop:'Попкорн / треск (хлопки при сбросе газа)',h_ecu:'Тюнинг ЭБУ',ecu:'Тюнинг ЭБУ',map:'Карта топлива / зажигания',lim:'Ограничитель оборотов',bst:'Давление наддува',h_bg:'Цвет фона',h_snd:'Звук',vol:'Громкость',h_col:'Цвет двигателя',h_lang:'Язык',single:'Одноцилиндровый',flat:'Оппозитный',inl:'Рядный',rpm_red:'об/мин / отсечка',overrev:'⚠ Перекрут!',blown:'💥 Разрушен',stall:'🛑 Двигатель заглох — кнопка 🔑',msg_clutch:'⚠ Выжмите сцепление для запуска',grind_msg:'⚠ Скрежет коробки! Выжмите сцепление'},
+ar:{title:'صانع المحركات',tg_open:'⚙ صانع المحركات',tg_close:'✕ إغلاق',snd_on:'🔇 تشغيل الصوت',snd_off:'🔊 إيقاف الصوت',ign_start:'🔑 تشغيل المحرك',ign_crank:'🔑 جارٍ التشغيل…',ign_stop:'🔑 إيقاف المحرك',dead_t:'💥 تعطّل المحرك!',dead_d:'خفّضت السرعة كثيرًا فتجاوز المحرك حدّه',fix:'🔧 إصلاح',clutch:'القابض<br>⬇',brake:'الفرامل<br>⬇',gas:'الوقود<br>⬇',twin:'محرك مزدوج (محركان معًا)',h_layout:'الأسطوانات / الترتيب',h_dim:'الأبعاد',bore:'قطر الأسطوانة',stroke:'شوط المكبس',h_fuel:'الوقود',fuel_gas:'بنزين',fuel_dsl:'ديزل',h_induct:'السحب / الشحن',carb:'مكربن',turbo:'شاحن توربيني',sc:'شاحن ميكانيكي',h_exh:'العادم',x_stock:'كاتم أصلي',x_sport:'رياضي',x_straight:'ماسورة مباشرة',x_open:'مفتوح (سباق)',pop:'فرقعة / طقطقة (عند رفع القدم)',h_ecu:'ضبط وحدة التحكم (ECU)',ecu:'ضبط ECU',map:'خريطة الوقود / الإشعال',lim:'محدّد الدوران',bst:'ضغط الشحن',h_bg:'لون الخلفية',h_snd:'الصوت',vol:'مستوى الصوت',h_col:'لون المحرك',h_lang:'اللغة',single:'أحادي',flat:'مسطّح',inl:'خطي',rpm_red:'دورة/د — الحد الأقصى',overrev:'⚠ دوران زائد!',blown:'💥 تعطّل',stall:'🛑 المحرك متوقف — زر 🔑',msg_clutch:'⚠ اضغط القابض ثم شغّل المحرك',grind_msg:'⚠ احتكاك التروس! اضغط القابض'}
+};
+const tr=k=>(TX[LG]&&TX[LG][k])||TX.en[k]||k;
+let EXN={},NAMES={},OPTS={};
+function applyLang(){
+ document.documentElement.lang=LG;const rtl=LG=='ar';
+ ['panel','hud','dead','lang'].forEach(i=>{$(i).dir=rtl?'rtl':'ltr'});
+ document.querySelectorAll('[data-i]').forEach(el=>{el.innerHTML=tr(el.dataset.i)});
+ EXN={stock:tr('x_stock'),sport:tr('x_sport'),straight:tr('x_straight'),open:tr('x_open')};
+ const F=tr('flat'),I=tr('inl');
+ NAMES={single:tr('single'),v2:'V2',f2:F+' 2',i2:I+' 2',v3:'V3',i3:I+' 3',f3:F+' 3',v4:'V4',i4:I+' 4',f4:F+' 4',i5:I+' 5',v6:'V6',v8:'V8',v10:'V10',v12:'V12',w12:'W12'};
+ OPTS={carb:tr('carb'),turbo:tr('turbo'),sc:tr('sc')};
+ tgLbl();sdLbl();langUI();ui();stats()}
+function langUI(){const h=Object.entries(LANGS).map(([k,n])=>`<button data-l="${k}" class="${LG==k?'on':''}">${n}</button>`).join('');
+ $('langs').innerHTML=h;$('lopts').innerHTML=h;
+ $('langs').onclick=$('lopts').onclick=e=>{const l=e.target.dataset.l;if(l)setLang(l)}}
+function setLang(l){LG=l;try{localStorage.setItem('em_lang',l)}catch(e){}$('lang').classList.remove('open');applyLang()}
+function initLang(){let sv=null;try{sv=localStorage.getItem('em_lang')}catch(e){}
+ if(sv&&LANGS[sv])LG=sv;applyLang();if(!(sv&&LANGS[sv]))$('lang').classList.add('open')}
+const COLS=['#7b8494','#c0392b','#2f6fd0','#c9a227'];
+const D=Math.PI/180;
+function layout(t,b){const N={single:1,v2:2,f2:2,i2:2,v3:3,i3:3,f3:3,v4:4,i4:4,f4:4,i5:5,v6:6,v8:8,v10:10,v12:12,w12:12}[t],sp=b*1.15,o=[];
+ for(let i=0;i<N;i++){let x=(i-(N-1)/2)*sp,bk=0,p=i*2*Math.PI/N;
+  if(t[0]=='v'){bk=(i%2?1:-1)*45*D;if(t=='v2'){x=(i-.5)*.4;p=0}else x=(i-(N-1)/2)*b*(N>3?.85:1);if(t=='v4')p=(i==1||i==2)?Math.PI:0;if(N>4){const q=Math.floor(i/2);x=(q-(N/4-.5))*(b+.45)+(i%2?.2:-.2);p=N==8?[0,90,270,180][q]*D:q*4*Math.PI/N}}
+  if(t[0]=='f'){bk=(i%2?1:-1)*90*D;if(t=='f2'){x=(i-.5)*.5;p=i?Math.PI:0}else if(t=='f4'){p=[0,Math.PI,Math.PI,0][i];x=(Math.floor(i/2)-.5)*sp+(i%2?.2:-.2)}else p+=i%2?Math.PI:0}
+  if(t=='i2')p=i*Math.PI;if(t=='i4')p=[0,Math.PI,Math.PI,0][i];if(t=='w12'){const row=Math.floor(i/3),bn=i%3;bk=(bn-1)*60*D;x=(row-1.5)*(b+.45)+(bn-1)*b*.4;p=[0,Math.PI,Math.PI,0][row]}
+  o.push({x,bk,p})}
+ return o}
+const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1,.1,100);
+scene.add(new THREE.HemisphereLight(0xffffff,0x556070,.9));
+const dl=new THREE.DirectionalLight(0xffffff,1.1);dl.position.set(5,8,6);scene.add(dl);
+const dl2=new THREE.DirectionalLight(0xaabbff,.5);dl2.position.set(-6,2,-4);scene.add(dl2);
+const root=new THREE.Group();root.rotation.y=-.6;scene.add(root);
+let eng,P;
+function build(){
+ if(eng){root.remove(eng);eng.traverse(o=>o.geometry&&o.geometry.dispose())}
+ if(V.dead){V.dead=false;S.rpm=IDLE;root.position.x=0;setGear(0);V.stall=true;S.rpm=0;V.crank=0;V.cin=0;$('dead').style.display='none'}
+ eng=new THREE.Group();P={cyl:[],spin:[],r:0,L:0,hot:null,pt:[],fly:null};
+ const b=S.bore/50,r=S.stroke/100,L=r*3,cl=layout(S.type,b);P.r=r;P.L=L;
+ const M=(c,m=.4,g=.5)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:g});
+ const cm=M(S.color,.35,.45),steel=M('#c4cad4',.5,.35),dark=M('#2a2e35',.4,.5);
+ const cy=(a,c,h,m,s=28)=>new THREE.Mesh(new THREE.CylinderGeometry(a,c,h,s),m);
+ const ax=m=>{m.rotation.z=Math.PI/2;return m};
+ const xs=cl.map(c=>c.x),x0=Math.min(...xs)-.5*b-.3,x1=Math.max(...xs)+.5*b+.3;
+ const crank=new THREE.Group();
+ const sh=ax(cy(.16,.16,x1-x0+.4,steel));sh.position.x=(x0+x1)/2;crank.add(sh);
+ cl.forEach(c=>{
+  const cs=Math.cos(c.p),sn=Math.sin(c.p);
+  const pin=ax(cy(.13,.13,.4,steel));pin.position.set(c.x,r*cs,r*sn);crank.add(pin);
+  for(const dx of[-.2,.2]){const w=new THREE.Mesh(new THREE.BoxGeometry(.08,r+.3,.4),dark);
+   w.position.set(c.x+dx,r*cs/2,r*sn/2);w.rotation.x=c.p;crank.add(w)}});
+ const fr=Math.max(.9,r+.4),fw=ax(cy(fr,fr,.25,steel,40));fw.position.x=x1+.3;crank.add(fw);
+ const mk=new THREE.Mesh(new THREE.BoxGeometry(.28,.2,.12),M('#e8590c'));mk.position.set(x1+.3,fr*.75,0);crank.add(mk);
+ eng.add(crank);P.crank=crank;
+ const cc=ax(cy(r+.55,r+.55,x1-x0,new THREE.MeshStandardMaterial({color:S.color,transparent:true,opacity:.22,metalness:.3,roughness:.5})));
+ cc.position.x=(x0+x1)/2;eng.add(cc);
+ const top=r+L+.3*b,s0=L-r-.4*b,len=top-s0;
+ cl.forEach(c=>{
+  const g=new THREE.Group();g.position.x=c.x;g.rotation.x=c.bk;
+  const ln=cy(b/2+.1,b/2+.1,len,new THREE.MeshStandardMaterial({color:S.color,transparent:true,opacity:.3,side:THREE.DoubleSide,metalness:.3,roughness:.5}),32);
+  ln.position.y=s0+len/2;g.add(ln);
+  for(let k=1;k<5;k++){const f=cy(b/2+.2,b/2+.2,.04,cm,32);f.position.y=s0+len*k/5.5;g.add(f)}
+  const hd=cy(b/2+.15,b/2+.15,.4*b,cm,32);hd.position.y=top+.2*b;g.add(hd);
+  const dz=S.fuel=='dsl',pl=cy(dz?.09:.06,dz?.09:.06,.45,dz?M('#d9480f'):steel,10);pl.position.y=top+.4*b+.2;g.add(pl);eng.add(g);
+  const pg=new THREE.Group();pg.position.x=c.x;pg.rotation.x=c.bk;
+  const pm=cy(b/2-.03,b/2-.03,.6*b,steel,32);pm.position.y=-.05*b;pg.add(pm);
+  const rg=cy(b/2-.01,b/2-.01,.04,dark,32);rg.position.y=.15*b;pg.add(rg);
+  pg.add(ax(cy(.07,.07,.3,dark,12)));eng.add(pg);
+  const rod=new THREE.Mesh(new THREE.BoxGeometry(.12,L,.09),dark);eng.add(rod);
+  P.cyl.push({c,pg,rod})});
+ const bx=new THREE.Box3().setFromObject(eng),xc=(bx.min.x+bx.max.x)/2,zf=bx.max.z;let y=bx.max.y;P.fxp=new THREE.Vector3(xc,y,0);P.fx=new THREE.Group();eng.add(P.fx);P.lt=new THREE.PointLight(0xff5500,0,40);P.lt.position.copy(P.fxp);eng.add(P.lt);
+ const spinner=(parent,x,y0,rad,col)=>{const g=new THREE.Group();g.position.set(x,y0,0);
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(.08,rad*1
